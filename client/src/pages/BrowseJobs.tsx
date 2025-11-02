@@ -546,7 +546,7 @@ export default function BrowseJobs() {
           <div className="hidden md:block">
             <Suspense fallback={null}>
               <JobRecommendations
-                allJobs={jobs}
+                allJobs={allJobs}
                 savedJobIds={savedJobs}
                 viewedJobs={recentJobs}
                 onSaveJob={toggleSaveJob}
