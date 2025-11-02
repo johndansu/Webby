@@ -52,6 +52,35 @@ const SearchAutocomplete = lazy(() => import('@/components/SearchAutocomplete').
 const JobComparisonModal = lazy(() => import('@/components/JobComparisonModal').then(m => ({ default: m.JobComparisonModal })))
 const ShareJobModal = lazy(() => import('@/components/ShareJobModal').then(m => ({ default: m.ShareJobModal })))
 
+// Read More Description Component
+function ReadMoreDescription({ description }: { description: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const cleanedDescription = cleanDescription(description, 500)
+  const shouldShowReadMore = description.length > 150
+  
+  if (!shouldShowReadMore) {
+    return (
+      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4 flex-1">
+        {cleanedDescription}
+      </p>
+    )
+  }
+  
+  return (
+    <div className="mb-4 flex-1">
+      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+        {isExpanded ? cleanedDescription : cleanedDescription.substring(0, 150) + '...'}
+      </p>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="mt-2 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold transition-colors"
+      >
+        {isExpanded ? 'Read Less' : 'Read More'}
+      </button>
+    </div>
+  )
+}
+
 export default function BrowseJobs() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, logout } = useAuthStore()
@@ -207,8 +236,9 @@ export default function BrowseJobs() {
   // Apply filters
   const applyFilters = (jobList: any[]) => {
     return jobList.filter((job: any) => {
-      // Salary filter
-      if (job.salary) {
+      // Salary filter - only apply if custom range is set (not default 0-300k)
+      const hasCustomSalaryRange = activeFilters.salaryRange[0] > 0 || activeFilters.salaryRange[1] < 300000
+      if (hasCustomSalaryRange && job.salary) {
         const salaryStr = String(job.salary).replace(/[^0-9]/g, '')
         const jobSalary = parseInt(salaryStr)
         if (!isNaN(jobSalary)) {
@@ -219,8 +249,10 @@ export default function BrowseJobs() {
       }
 
       // Job type filter
-      if (activeFilters.jobTypes.length > 0 && job.type) {
-        if (!activeFilters.jobTypes.some(type => job.type.toLowerCase().includes(type.toLowerCase()))) {
+      if (activeFilters.jobTypes.length > 0) {
+        const jobType = (job.type || '').toLowerCase()
+        const matchesJobType = activeFilters.jobTypes.some(type => jobType.includes(type.toLowerCase()))
+        if (!matchesJobType) {
           return false
         }
       }
@@ -794,15 +826,15 @@ export default function BrowseJobs() {
                   </div>
 
                   {/* Job Title */}
-                  <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-teal-600 transition-colors line-clamp-2">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1 group-hover:text-teal-600 transition-colors line-clamp-2">
                     {job.title || 'No Title'}
                   </h3>
                   
                   {/* Company Name */}
-                  <p className="text-sm font-semibold text-slate-700 mb-3">{job.company || 'Company'}</p>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{job.company || 'Company'}</p>
                   
                   {/* Location */}
-                  <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-3">
+                  <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-3">
                     <MapPin className="h-4 w-4 flex-shrink-0" />
                     <span className="truncate">{job.location || 'Remote'}</span>
                   </div>
@@ -810,36 +842,32 @@ export default function BrowseJobs() {
                   {/* Tags & Badges */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {job.type && (
-                      <span className="px-3 py-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-lg text-xs font-semibold">
+                      <span className="px-3 py-1.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800 rounded-lg text-xs font-semibold">
                         {job.type}
                       </span>
                     )}
                     {job.salary && job.salary !== 'Not specified' && (
-                      <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1">
+                      <span className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1">
                         <DollarSign className="h-3.5 w-3.5" />
                         {job.salary}
                       </span>
                     )}
                     {job.experience && (
-                      <span className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold">
+                      <span className="px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded-lg text-xs font-semibold">
                         {job.experience}
                       </span>
                     )}
                   </div>
 
-                  {/* Description */}
-                  {job.description && (
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4 line-clamp-3 flex-1">
-                      {cleanDescription(job.description, 250)}
-                    </p>
-                  )}
+                  {/* Description with read more */}
+                  {job.description && <ReadMoreDescription description={job.description} />}
 
                   {/* Footer - Source & Apply */}
-                  <div className="pt-4 border-t border-slate-100 mt-auto">
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700 mt-auto">
                     {job.source && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-3">
                         <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
-                        <span className="truncate">via <span className="font-semibold text-slate-700">{job.source}</span></span>
+                        <span className="truncate">via <span className="font-semibold text-slate-700 dark:text-slate-300">{job.source}</span></span>
                       </div>
                     )}
 
