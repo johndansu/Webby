@@ -837,7 +837,7 @@ export default function BrowseJobs() {
                         } ${!canAddMore && !isInCompare(jobKey) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={isInCompare(jobKey) ? 'Remove from comparison' : 'Add to comparison'}
                       >
-                        <CheckCircle2 className={`h-5 w-5 ${isInCompare(jobKey) ? 'text-teal-600' : ''}`} />
+                        <GitCompare className={`h-5 w-5 ${isInCompare(jobKey) ? 'text-teal-600' : ''}`} />
                       </button>
 
                       {/* Save Button */}
