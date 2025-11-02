@@ -301,9 +301,6 @@ export default function SavedJobs() {
           </div>
         </div>
 
-        {/* Recently Viewed Jobs */}
-        <RecentlyViewed />
-
         {/* Saved Jobs List */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -479,6 +476,9 @@ export default function SavedJobs() {
             </div>
           </div>
         )}
+        
+        {/* Recently Viewed Jobs */}
+        <RecentlyViewed />
       </div>
 
       {/* Exit Intent Modal */}
