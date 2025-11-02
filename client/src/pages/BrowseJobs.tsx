@@ -347,10 +347,51 @@ export default function BrowseJobs() {
     })
   }
 
-  // Randomize when not searching, then apply filters
+  // Helper function to extract city from location string
+  const extractCity = (loc: string): string => {
+    if (!loc) return ''
+    // Try to extract city name before comma or from common formats
+    const cityMatch = loc.match(/^([^,]+)/)
+    return cityMatch ? cityMatch[1].trim().toLowerCase() : loc.toLowerCase()
+  }
+
+  // Sort jobs by location proximity when user has entered a location
+  const sortJobsByLocation = (jobList: any[]) => {
+    if (!location) return jobList
+    
+    const userCity = extractCity(location)
+    
+    return jobList.sort((a, b) => {
+      const locA = a.location || ''
+      const locB = b.location || ''
+      
+      const cityA = extractCity(locA)
+      const cityB = extractCity(locB)
+      
+      // Exact city match gets highest priority
+      if (cityA === userCity && cityB !== userCity) return -1
+      if (cityA !== userCity && cityB === userCity) return 1
+      
+      // Partial match gets second priority
+      const partialMatchA = locA.toLowerCase().includes(userCity) && cityA !== userCity
+      const partialMatchB = locB.toLowerCase().includes(userCity) && cityB !== userCity
+      
+      if (partialMatchA && !partialMatchB) return -1
+      if (!partialMatchA && partialMatchB) return 1
+      
+      // Remote jobs get lower priority when searching with location
+      if (locA.toLowerCase().includes('remote') && !locB.toLowerCase().includes('remote')) return 1
+      if (!locA.toLowerCase().includes('remote') && locB.toLowerCase().includes('remote')) return -1
+      
+      return 0
+    })
+  }
+
+  // Randomize when not searching, then apply filters and sort by location
   const shuffledJobs = (!searchQuery && !location) ? shuffleArray(jobs) : jobs
   const filteredJobs = applyFilters(shuffledJobs)
-  const allJobs = filteredJobs
+  const sortedJobs = sortJobsByLocation(filteredJobs)
+  const allJobs = sortedJobs
   
   // Pagination calculations
   const totalPages = Math.ceil(allJobs.length / jobsPerPage)
