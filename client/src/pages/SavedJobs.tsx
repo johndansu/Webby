@@ -478,7 +478,7 @@ export default function SavedJobs() {
         )}
         
         {/* Recently Viewed Jobs */}
-        <RecentlyViewed />
+        {!isLoading && <div className="mt-16"><RecentlyViewed /></div>}
       </div>
 
       {/* Exit Intent Modal */}
