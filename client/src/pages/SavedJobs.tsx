@@ -1,25 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { 
   Heart, 
   Briefcase, 
   Building2,
   MapPin,
-  DollarSign,
   ExternalLink,
   User,
   LogOut,
   Bookmark,
   CheckCircle2,
-  TrendingUp,
-  Filter,
-  SortAsc,
-  Trash2,
-  FolderOpen,
-  Star
+  Filter
 } from 'lucide-react'
-import { dataService } from '@/services/dataService'
 import { useAuthStore } from '@/store/authStore'
 import { cleanDescription } from '@/utils/htmlCleaner'
 import { useToast } from '@/components/ToastContainer'
@@ -41,28 +33,42 @@ export default function SavedJobs() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showExitIntent, setShowExitIntent] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-
-  // Exit intent - only show if not dismissed and no email captured
-  const shouldShowExitIntent = !localStorage.getItem('exitIntentDismissed') && !localStorage.getItem('exitIntentEmail')
   
-  useExitIntent({
-    onExitIntent: () => {
-      if (shouldShowExitIntent) {
-        setShowExitIntent(true)
+  // Load saved jobs from localStorage - no need for API call
+  const [savedJobsObjects, setSavedJobsObjects] = useState(() => {
+    const saved = localStorage.getItem('savedJobsObjects')
+    return saved ? JSON.parse(saved) : {}
+  })
+  
+  // Sync localStorage changes from BrowseJobs page
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('savedJobsObjects')
+      if (saved) {
+        setSavedJobsObjects(JSON.parse(saved))
       }
-    },
-    delay: 3000, // Wait 3 seconds before enabling
-    enabled: shouldShowExitIntent
-  })
-
-  const { data: jobsData, isLoading } = useQuery({
-    queryKey: ['all-jobs'],
-    queryFn: () => dataService.getData({ limit: 100 })
-  })
+    }
+    
+    const handleFocus = () => {
+      // Reload when tab regains focus to pick up changes from BrowseJobs
+      const saved = localStorage.getItem('savedJobsObjects')
+      if (saved) {
+        setSavedJobsObjects(JSON.parse(saved))
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
 
   const toggleSaveJob = (jobKey: string, jobTitle?: string) => {
     const wasSaved = savedJobs.has(jobKey)
     const previousState = new Set(savedJobs)
+    const previousObjects = { ...savedJobsObjects }
     
     setSavedJobs(prev => {
       const newSet = new Set(prev)
@@ -74,6 +80,15 @@ export default function SavedJobs() {
       localStorage.setItem('savedJobs', JSON.stringify([...newSet]))
       return newSet
     })
+    
+    setSavedJobsObjects(prev => {
+      const updated = { ...prev }
+      if (wasSaved) {
+        delete updated[jobKey]
+      }
+      localStorage.setItem('savedJobsObjects', JSON.stringify(updated))
+      return updated
+    })
 
     if (wasSaved) {
       // Job was removed
@@ -83,7 +98,9 @@ export default function SavedJobs() {
           label: 'Undo',
           onClick: () => {
             setSavedJobs(previousState)
+            setSavedJobsObjects(previousObjects)
             localStorage.setItem('savedJobs', JSON.stringify([...previousState]))
+            localStorage.setItem('savedJobsObjects', JSON.stringify(previousObjects))
             showSuccess('Job saved again')
           }
         }
@@ -91,28 +108,16 @@ export default function SavedJobs() {
     }
   }
 
-  const parseData = (data: any) => {
-    if (typeof data === 'string') {
-      try {
-        return JSON.parse(data)
-      } catch (e) {
-        return null
-      }
-    }
-    return data
-  }
-
-  // Filter only saved jobs
-  const allJobs = jobsData?.data || []
-  const allSavedJobs = allJobs.filter((item: any) => {
-    const job = parseData(item.data)
-    if (!job) return false
-    const jobKey = `${item.id}-${job.title || 'untitled'}`
-    return savedJobs.has(jobKey)
-  })
+  // Get saved jobs from localStorage objects
+  const allSavedJobs = Object.entries(savedJobsObjects).map(([jobKey, job]: [string, any]) => ({
+    ...job,
+    jobKey
+  }))
 
   const filteredSavedJobs = allSavedJobs.slice(0, visibleJobsCount)
   const hasMoreJobs = visibleJobsCount < allSavedJobs.length
+  
+  const isLoading = false
 
   // Infinite scroll - Load more jobs
   const loadMoreJobs = () => {
@@ -270,10 +275,10 @@ export default function SavedJobs() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-1">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
                 Saved Jobs
               </h1>
-              <p className="text-slate-600">
+              <p className="text-slate-600 dark:text-slate-400">
                 {savedJobs.size} {savedJobs.size === 1 ? 'job' : 'jobs'} saved
               </p>
             </div>
@@ -301,10 +306,10 @@ export default function SavedJobs() {
             ))}
           </div>
         ) : filteredSavedJobs.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
-            <Heart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No saved jobs yet</h3>
-            <p className="text-slate-600 mb-6">
+          <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <Heart className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">No saved jobs yet</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
               Browse jobs and save the ones you like
             </p>
             <Link
@@ -317,25 +322,23 @@ export default function SavedJobs() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredSavedJobs.map((item: any, index: number) => {
-              const job = parseData(item.data)
+            {filteredSavedJobs.map((job: any, index: number) => {
               if (!job) return null
-              const jobKey = `${item.id}-${job.title || 'untitled'}`
 
                 return (
                   <div
-                    key={index}
-                    className="group bg-white rounded-xl p-5 hover:shadow-lg transition-all duration-200 border border-slate-200 hover:border-slate-300 flex flex-col"
+                    key={job.jobKey || index}
+                    className="group bg-white dark:bg-slate-800 rounded-xl p-5 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col"
                   >
                     {/* Header - Company Logo & Unsave Button */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="h-12 w-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-6 w-6 text-slate-600" />
+                      <div className="h-12 w-12 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-6 w-6 text-slate-600 dark:text-slate-300" />
                       </div>
 
                       <button
-                        onClick={() => toggleSaveJob(jobKey, job.title)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                        onClick={() => toggleSaveJob(job.jobKey, job.title)}
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
                         title="Remove from saved"
                       >
                         <Heart className="h-5 w-5 fill-red-500 text-red-500" />
@@ -343,15 +346,15 @@ export default function SavedJobs() {
                     </div>
 
                     {/* Job Title */}
-                    <h3 className="text-base font-bold text-slate-900 mb-1 line-clamp-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1 line-clamp-2">
                       {job.title || 'No Title'}
                     </h3>
 
                     {/* Company Name */}
-                    <p className="text-sm text-slate-600 mb-3">{job.company || 'Company'}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{job.company || 'Company'}</p>
 
                     {/* Location & Type */}
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mb-4">
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-4">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
                         <span className="truncate">{job.location || 'Remote'}</span>
@@ -366,7 +369,7 @@ export default function SavedJobs() {
 
                     {/* Description */}
                     {job.description && (
-                      <p className="text-slate-600 text-sm leading-relaxed mb-4 line-clamp-2 flex-1">
+                      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4 line-clamp-2 flex-1">
                         {cleanDescription(job.description, 150)}
                       </p>
                     )}
@@ -374,16 +377,16 @@ export default function SavedJobs() {
                     {/* Salary */}
                     {job.salary && job.salary !== 'Not specified' && (
                       <div className="mb-4">
-                        <span className="text-sm font-semibold text-emerald-700">
+                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                           {job.salary}
                         </span>
                       </div>
                     )}
 
                     {/* Footer */}
-                    <div className="flex gap-2 mt-auto pt-4 border-t border-slate-100">
+                    <div className="flex gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
                       <a
-                        href={job.url || item.url}
+                        href={job.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 inline-flex items-center justify-center gap-2 bg-teal-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"

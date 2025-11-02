@@ -139,6 +139,12 @@ export default function BrowseJobs() {
     const saved = localStorage.getItem('savedJobs')
     return saved ? new Set(JSON.parse(saved)) : new Set()
   })
+  
+  // Store full job objects separately
+  const [savedJobsObjects, setSavedJobsObjects] = useState<Map<string, any>>(() => {
+    const saved = localStorage.getItem('savedJobsObjects')
+    return saved ? new Map(Object.entries(JSON.parse(saved))) : new Map()
+  })
 
   // Exit intent - only show if not dismissed and no email captured
   const shouldShowExitIntent = !localStorage.getItem('exitIntentDismissed') && !localStorage.getItem('exitIntentEmail')
@@ -183,11 +189,12 @@ export default function BrowseJobs() {
     gcTime: 30 * 60 * 1000 // Keep in cache for 30 minutes
   })
 
-  const toggleSaveJob = (jobKey: string, jobTitle?: string) => {
+  const toggleSaveJob = (jobKey: string, jobTitle?: string, jobObject?: any) => {
     const wasSaved = savedJobs.has(jobKey)
     
     // Store previous state for undo
     const previousState = new Set(savedJobs)
+    const previousObjects = new Map(savedJobsObjects)
     
     setSavedJobs(prev => {
       const newSet = new Set(prev)
@@ -198,6 +205,18 @@ export default function BrowseJobs() {
       }
       localStorage.setItem('savedJobs', JSON.stringify([...newSet]))
       return newSet
+    })
+    
+    // Also update the saved objects Map
+    setSavedJobsObjects(prev => {
+      const newMap = new Map(prev)
+      if (wasSaved) {
+        newMap.delete(jobKey)
+      } else if (jobObject) {
+        newMap.set(jobKey, jobObject)
+      }
+      localStorage.setItem('savedJobsObjects', JSON.stringify(Object.fromEntries(newMap)))
+      return newMap
     })
 
     if (!wasSaved) {
@@ -218,7 +237,9 @@ export default function BrowseJobs() {
             label: 'Undo',
             onClick: () => {
               setSavedJobs(previousState)
+              setSavedJobsObjects(previousObjects)
               localStorage.setItem('savedJobs', JSON.stringify([...previousState]))
+              localStorage.setItem('savedJobsObjects', JSON.stringify(Object.fromEntries(previousObjects)))
               showInfo('Job unsaved')
             }
           }
@@ -232,7 +253,9 @@ export default function BrowseJobs() {
           label: 'Undo',
           onClick: () => {
             setSavedJobs(previousState)
+            setSavedJobsObjects(previousObjects)
             localStorage.setItem('savedJobs', JSON.stringify([...previousState]))
+            localStorage.setItem('savedJobsObjects', JSON.stringify(Object.fromEntries(previousObjects)))
             showSuccess('Job saved again')
           }
         }
@@ -842,7 +865,7 @@ export default function BrowseJobs() {
 
                       {/* Save Button */}
                       <button
-                        onClick={() => toggleSaveJob(jobKey, job.title)}
+                        onClick={() => toggleSaveJob(jobKey, job.title, job)}
                         className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all flex-shrink-0 group/save"
                       >
                         <Heart
