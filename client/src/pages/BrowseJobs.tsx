@@ -52,31 +52,26 @@ const SearchAutocomplete = lazy(() => import('@/components/SearchAutocomplete').
 const JobComparisonModal = lazy(() => import('@/components/JobComparisonModal').then(m => ({ default: m.JobComparisonModal })))
 const ShareJobModal = lazy(() => import('@/components/ShareJobModal').then(m => ({ default: m.ShareJobModal })))
 
-// Read More Description Component
+// Read More Description Component - Industry standard approach
 function ReadMoreDescription({ description }: { description: string }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const cleanedDescription = cleanDescription(description, 500)
-  const shouldShowReadMore = description.length > 150
-  
-  if (!shouldShowReadMore) {
-    return (
-      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4 flex-1">
-        {cleanedDescription}
-      </p>
-    )
-  }
   
   return (
     <div className="mb-4 flex-1">
-      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-        {isExpanded ? cleanedDescription : cleanedDescription.substring(0, 150) + '...'}
+      <p className={`text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-2 ${
+        !isExpanded ? 'line-clamp-3' : ''
+      }`}>
+        {cleanedDescription}
       </p>
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="mt-2 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold transition-colors"
-      >
-        {isExpanded ? 'Read Less' : 'Read More'}
-      </button>
+      {cleanedDescription.length > 150 && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold transition-colors"
+        >
+          {isExpanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
     </div>
   )
 }
