@@ -10,14 +10,15 @@ import {
   LogOut,
   Bookmark,
   CheckCircle2,
-  Filter
+  Filter,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { cleanDescription } from '@/utils/htmlCleaner'
 import { useToast } from '@/components/ToastContainer'
 import { JobCardSkeleton } from '@/components/SkeletonLoader'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { useExitIntent } from '@/hooks/useExitIntent'
 import { ExitIntentModal } from '@/components/ExitIntentModal'
 import { RecentlyViewed } from '@/components/RecentlyViewed'
@@ -29,8 +30,8 @@ export default function SavedJobs() {
     const saved = localStorage.getItem('savedJobs')
     return saved ? new Set(JSON.parse(saved)) : new Set()
   })
-  const [visibleJobsCount, setVisibleJobsCount] = useState(20)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const jobsPerPage = 20
   const [showExitIntent, setShowExitIntent] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   
@@ -40,7 +41,7 @@ export default function SavedJobs() {
     return saved ? JSON.parse(saved) : {}
   })
   
-  // Sync localStorage changes from BrowseJobs page
+  // Sync localStorage changes and cleanup orphaned keys
   useEffect(() => {
     const handleStorageChange = () => {
       const saved = localStorage.getItem('savedJobsObjects')
@@ -57,13 +58,28 @@ export default function SavedJobs() {
       }
     }
     
+    // Cleanup: Remove orphaned keys from savedJobs that don't have corresponding objects
+    const saved = localStorage.getItem('savedJobsObjects')
+    if (saved) {
+      const objects = JSON.parse(saved)
+      const objectKeys = new Set(Object.keys(objects))
+      const currentSavedJobs = new Set(savedJobs)
+      const orphanedKeys = [...currentSavedJobs].filter(key => !objectKeys.has(key))
+      
+      if (orphanedKeys.length > 0) {
+        const cleanedSet = new Set([...currentSavedJobs].filter(key => objectKeys.has(key)))
+        setSavedJobs(cleanedSet)
+        localStorage.setItem('savedJobs', JSON.stringify([...cleanedSet]))
+      }
+    }
+    
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('focus', handleFocus)
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [])
+  }, [savedJobs])
 
   const toggleSaveJob = (jobKey: string, jobTitle?: string) => {
     const wasSaved = savedJobs.has(jobKey)
@@ -113,30 +129,20 @@ export default function SavedJobs() {
     ...job,
     jobKey
   }))
-
-  const filteredSavedJobs = allSavedJobs.slice(0, visibleJobsCount)
-  const hasMoreJobs = visibleJobsCount < allSavedJobs.length
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(allSavedJobs.length / jobsPerPage)
+  const startIndex = (currentPage - 1) * jobsPerPage
+  const endIndex = startIndex + jobsPerPage
+  const filteredSavedJobs = allSavedJobs.slice(startIndex, endIndex)
   
   const isLoading = false
-
-  // Infinite scroll - Load more jobs
-  const loadMoreJobs = () => {
-    if (!isLoadingMore && hasMoreJobs) {
-      setIsLoadingMore(true)
-      
-      setTimeout(() => {
-        setVisibleJobsCount(prev => Math.min(prev + 20, allSavedJobs.length))
-        setIsLoadingMore(false)
-      }, 500)
-    }
+  
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-
-  const sentinelRef = useInfiniteScroll({
-    onLoadMore: loadMoreJobs,
-    hasMore: hasMoreJobs,
-    isLoading: isLoadingMore,
-    threshold: 0.8
-  })
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -401,34 +407,77 @@ export default function SavedJobs() {
           </div>
         )}
 
-        {/* Infinite Scroll Loading Indicator */}
-        {!isLoading && filteredSavedJobs.length > 0 && (
-          <>
-            {isLoadingMore && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-5">
-                {[...Array(8)].map((_, i) => (
-                  <JobCardSkeleton key={`loading-${i}`} />
-                ))}
-              </div>
-            )}
-            
-            {/* Intersection Observer Sentinel */}
-            <div ref={sentinelRef} className="h-20 flex items-center justify-center">
-              {hasMoreJobs && !isLoadingMore && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">Scroll for more jobs...</p>
-              )}
-              {!hasMoreJobs && filteredSavedJobs.length > 20 && (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full">
-                    <CheckCircle2 className="h-4 w-4 text-teal-600" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      You've seen all {allSavedJobs.length} saved jobs
-                    </span>
-                  </div>
-                </div>
-              )}
+        {/* Pagination Controls */}
+        {!isLoading && filteredSavedJobs.length > 0 && totalPages > 1 && (
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Showing <span className="font-semibold text-slate-900 dark:text-slate-100">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{Math.min(endIndex, allSavedJobs.length)}</span> of{' '}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{allSavedJobs.length}</span> jobs
             </div>
-          </>
+            
+            <div className="flex items-center gap-1">
+              {/* Previous Button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-4 py-2 rounded-lg border transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-teal-600 border-teal-600 text-white'
+                          : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+              </div>
+              
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Show end message if on last page */}
+        {!isLoading && filteredSavedJobs.length > 0 && currentPage === totalPages && totalPages > 1 && (
+          <div className="text-center py-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full">
+              <CheckCircle2 className="h-4 w-4 text-teal-600" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                You've viewed all {allSavedJobs.length} saved jobs
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
