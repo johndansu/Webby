@@ -827,7 +827,7 @@ export default function BrowseJobs() {
                   {/* Header - Company Logo & Actions */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="h-12 w-12 bg-teal-50 dark:bg-teal-900/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-teal-100 dark:border-teal-800">
-                      <Target className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                      <Building2 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                     </div>
 
                     <div className="flex items-center gap-2">
