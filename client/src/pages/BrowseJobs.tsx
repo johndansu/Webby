@@ -52,27 +52,64 @@ const SearchAutocomplete = lazy(() => import('@/components/SearchAutocomplete').
 const JobComparisonModal = lazy(() => import('@/components/JobComparisonModal').then(m => ({ default: m.JobComparisonModal })))
 const ShareJobModal = lazy(() => import('@/components/ShareJobModal').then(m => ({ default: m.ShareJobModal })))
 
-// Read More Description Component - Industry standard approach
-function ReadMoreDescription({ description }: { description: string }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+// Read More Description Component - Opens modal for full description
+function ReadMoreDescription({ description, title, company }: { description: string; title: string; company: string }) {
+  const [showModal, setShowModal] = useState(false)
   const cleanedDescription = cleanDescription(description, 500)
   
   return (
-    <div className="mb-4 flex-1">
-      <p className={`text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-2 ${
-        !isExpanded ? 'line-clamp-3' : ''
-      }`}>
-        {cleanedDescription}
-      </p>
-      {cleanedDescription.length > 150 && (
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold transition-colors"
+    <>
+      <div className="mb-4 flex-1">
+        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-2 line-clamp-3">
+          {cleanedDescription}
+        </p>
+        {cleanedDescription.length > 150 && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm font-semibold transition-colors"
+          >
+            Show more
+          </button>
+        )}
+      </div>
+      
+      {/* Job Description Modal */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setShowModal(false)}
         >
-          {isExpanded ? 'Show less' : 'Show more'}
-        </button>
+          <div 
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{company}</p>
+                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+                >
+                  <X className="h-6 w-6 text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto max-h-[calc(90vh-100px)] px-6 py-6">
+              <div 
+                className="prose prose-sm max-w-none prose-slate dark:prose-invert prose-headings:text-slate-900 dark:prose-headings:text-slate-100 prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-strong:text-slate-900 dark:prose-strong:text-slate-100"
+                dangerouslySetInnerHTML={{ __html: cleanDescription(description, 1000) }}
+              />
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -855,7 +892,13 @@ export default function BrowseJobs() {
                   </div>
 
                   {/* Description with read more */}
-                  {job.description && <ReadMoreDescription description={job.description} />}
+                  {job.description && (
+                    <ReadMoreDescription 
+                      description={job.description} 
+                      title={job.title || 'No Title'}
+                      company={job.company || 'Company'}
+                    />
+                  )}
 
                   {/* Footer - Source & Apply */}
                   <div className="pt-4 border-t border-slate-100 dark:border-slate-700 mt-auto">
