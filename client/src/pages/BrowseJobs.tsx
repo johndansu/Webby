@@ -389,7 +389,7 @@ export default function BrowseJobs() {
           <div className="flex justify-between items-center h-20">
             <Link to="/" className="flex items-center gap-2 group">
               <div className="h-10 w-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-700 transition-colors duration-200">
-                <Target className="h-5 w-5 text-white" />
+                <Briefcase className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100">
                 Job<span className="text-teal-600">Hunter</span>
@@ -827,7 +827,7 @@ export default function BrowseJobs() {
                   {/* Header - Company Logo & Actions */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="h-12 w-12 bg-teal-50 dark:bg-teal-900/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-teal-100 dark:border-teal-800">
-                      <Building2 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                      <Target className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                     </div>
 
                     <div className="flex items-center gap-2">
