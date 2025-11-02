@@ -26,7 +26,8 @@ import {
   Share2,
   Save,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Target
 } from 'lucide-react'
 import { searchService } from '@/services/searchService'
 import { locationService } from '@/services/locationService'
@@ -388,7 +389,7 @@ export default function BrowseJobs() {
           <div className="flex justify-between items-center h-20">
             <Link to="/" className="flex items-center gap-2 group">
               <div className="h-10 w-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-700 transition-colors duration-200">
-                <Briefcase className="h-5 w-5 text-white" />
+                <Target className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100">
                 Job<span className="text-teal-600">Hunter</span>
@@ -820,13 +821,13 @@ export default function BrowseJobs() {
                 <>
                   <div
                     key={jobKey}
-                    className="group bg-white dark:bg-slate-800 rounded-lg p-5 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-teal-700 flex flex-col animate-fadeIn"
+                    className="group bg-white dark:bg-slate-800 rounded-lg p-5 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-700 flex flex-col animate-fadeIn"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                   {/* Header - Company Logo & Actions */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="h-12 w-12 bg-teal-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-teal-100 dark:border-blue-800">
-                      <Building2 className="h-6 w-6 text-teal-600 dark:text-blue-400" />
+                    <div className="h-12 w-12 bg-teal-50 dark:bg-teal-900/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-teal-100 dark:border-teal-800">
+                      <Building2 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                     </div>
 
                     <div className="flex items-center gap-2">
