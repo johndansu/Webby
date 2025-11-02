@@ -101,10 +101,9 @@ function ReadMoreDescription({ description, title, company }: { description: str
 
             {/* Content */}
             <div className="overflow-y-auto max-h-[calc(90vh-100px)] px-6 py-6">
-              <div 
-                className="prose prose-sm max-w-none prose-slate dark:prose-invert prose-headings:text-slate-900 dark:prose-headings:text-slate-100 prose-p:text-slate-600 dark:prose-p:text-slate-400 prose-strong:text-slate-900 dark:prose-strong:text-slate-100"
-                dangerouslySetInnerHTML={{ __html: cleanDescription(description, 1000) }}
-              />
+              <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                {description}
+              </div>
             </div>
           </div>
         </div>
