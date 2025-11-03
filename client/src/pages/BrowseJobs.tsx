@@ -1015,7 +1015,7 @@ export default function BrowseJobs() {
                 
                 {/* AdSense Ad - appears after every 8 jobs */}
                 {showAdAfter && (
-                  <div key={`ad-${index}`} className="col-span-full my-4">
+                  <div key={`ad-${index}`} className="col-span-full my-2">
                     <AdSense 
                       adSlot="0000000000"
                       adFormat="auto"
