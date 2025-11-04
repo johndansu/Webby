@@ -23,7 +23,11 @@ router.get('/all', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Get query parameter to filter inactive users (default: show all)
+    const hideInactive = req.query.hideInactive === 'true';
+
     const users = await prisma.user.findMany({
+      where: hideInactive ? { isActive: true } : {},
       select: {
         id: true,
         email: true,
@@ -40,10 +44,28 @@ router.get('/all', async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Log the total count for debugging
+    const totalCount = await prisma.user.count();
+    const activeCount = await prisma.user.count({ where: { isActive: true } });
+    const inactiveCount = totalCount - activeCount;
+    
+    console.log(`[GET /users/all] Found ${users.length} users (total in DB: ${totalCount}, active: ${activeCount}, inactive: ${inactiveCount})`);
+
     const response: ApiResponse<any> = {
       success: true,
       data: users,
-      message: `Found ${users.length} users`
+      message: totalCount !== users.length 
+        ? `Found ${users.length} users (${totalCount} total in database, ${inactiveCount} inactive)`
+        : `Found ${users.length} users`,
+      meta: {
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        returned: users.length,
+        warning: totalCount !== users.length 
+          ? `There are ${inactiveCount} inactive users not shown. Enable "Show Inactive" to see them.`
+          : undefined
+      }
     };
 
     res.json(response);
@@ -52,6 +74,57 @@ router.get('/all', async (req: Request, res: Response): Promise<void> => {
     const response: ApiResponse = {
       success: false,
       error: 'Failed to fetch users'
+    };
+    res.status(500).json(response);
+  }
+});
+
+// Admin-only: Bulk activate users
+router.post('/bulk-activate', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Check if user is admin
+    if (req.user?.role !== 'ADMIN') {
+      const response: ApiResponse = {
+        success: false,
+        error: 'Unauthorized. Admin access required.'
+      };
+      res.status(403).json(response);
+      return;
+    }
+
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      const response: ApiResponse = {
+        success: false,
+        error: 'Please provide an array of user IDs to activate'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Activate all provided users
+    const result = await prisma.user.updateMany({
+      where: {
+        id: { in: userIds }
+      },
+      data: {
+        isActive: true
+      }
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: `Activated ${result.count} user(s)`,
+      data: { count: result.count }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Bulk activate users error:', error);
+    const response: ApiResponse = {
+      success: false,
+      error: 'Failed to activate users'
     };
     res.status(500).json(response);
   }

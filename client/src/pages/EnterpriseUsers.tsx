@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { Users, Search, Filter, User, Mail, Calendar, Shield, CheckCircle, XCircle, Trash2, UserCog, Ban, CheckCheck, Download } from 'lucide-react'
+import { Users, Search, Filter, User, Mail, Calendar, Shield, CheckCircle, XCircle, Trash2, UserCog, Ban, CheckCheck, Download, AlertTriangle } from 'lucide-react'
 import api from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
 interface User {
-  id: number
+  id: string
   email: string
   username: string
   firstName: string | null
@@ -24,6 +24,7 @@ export default function EnterpriseUsers() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'USER'>('ALL')
+  const [showInactive, setShowInactive] = useState(true) // Show all users by default
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [userToChangeRole, setUserToChangeRole] = useState<User | null>(null)
   const [newRole, setNewRole] = useState<'ADMIN' | 'USER'>('USER')
@@ -36,9 +37,9 @@ export default function EnterpriseUsers() {
   }, [user, navigate])
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['all-users'],
+    queryKey: ['all-users', showInactive],
     queryFn: async () => {
-      const response = await api.get('/users/all')
+      const response = await api.get(`/users/all?hideInactive=${!showInactive}`)
       return response.data.data as User[]
     },
     enabled: !!user && user.role === 'ADMIN' // Only fetch if user is admin
@@ -61,7 +62,7 @@ export default function EnterpriseUsers() {
 
   const handleDeleteUser = () => {
     if (userToDelete) {
-      deleteUserMutation.mutate(userToDelete.id.toString())
+      deleteUserMutation.mutate(userToDelete.id)
     }
   }
 
@@ -94,10 +95,34 @@ export default function EnterpriseUsers() {
     }
   })
 
+  // Bulk activate users mutation
+  const bulkActivateMutation = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      await api.post('/users/bulk-activate', { userIds })
+    },
+    onSuccess: (_, userIds) => {
+      toast.success(`Activated ${userIds.length} user(s) successfully`)
+      queryClient.invalidateQueries({ queryKey: ['all-users'] })
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to activate users')
+    }
+  })
+
+  const handleBulkActivate = () => {
+    const inactiveUsers = data?.filter(u => !u.isActive) || []
+    if (inactiveUsers.length === 0) {
+      toast.error('No inactive users to activate')
+      return
+    }
+    const userIds = inactiveUsers.map(u => u.id)
+    bulkActivateMutation.mutate(userIds)
+  }
+
   const handleChangeRole = () => {
     if (userToChangeRole) {
       changeRoleMutation.mutate({
-        userId: userToChangeRole.id.toString(),
+        userId: userToChangeRole.id,
         role: newRole
       })
     }
@@ -181,11 +206,26 @@ export default function EnterpriseUsers() {
                   User Management
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {data?.length || 0} registered users
+                  {data?.filter(u => u.isActive).length || 0} active users
+                  {data && data.some(u => !u.isActive) && (
+                    <span className="ml-2 text-orange-600 dark:text-orange-400">
+                      ({data.filter(u => !u.isActive).length} inactive)
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {data && data.some(u => !u.isActive) && (
+                <button
+                  onClick={handleBulkActivate}
+                  disabled={bulkActivateMutation.isPending}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                  {bulkActivateMutation.isPending ? 'Activating...' : `Activate All (${data.filter(u => !u.isActive).length})`}
+                </button>
+              )}
               <button
                 onClick={exportToCSV}
                 disabled={!data || data.length === 0}
@@ -234,6 +274,21 @@ export default function EnterpriseUsers() {
                 <option value="USER">Users</option>
               </select>
             </div>
+
+            {/* Show Inactive Toggle */}
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                  className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                />
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  Show Inactive
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -248,6 +303,26 @@ export default function EnterpriseUsers() {
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
             <p className="text-red-800 dark:text-red-200">Failed to load users. Please try again.</p>
+          </div>
+        )}
+
+        {/* Warning for inactive users */}
+        {!isLoading && !error && data && !showInactive && data.some(u => !u.isActive) && (
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                <p className="text-orange-800 dark:text-orange-200">
+                  There are <strong>{data.filter(u => !u.isActive).length} inactive user(s)</strong> not shown.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInactive(true)}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Show Inactive Users
+              </button>
+            </div>
           </div>
         )}
 
@@ -339,7 +414,7 @@ export default function EnterpriseUsers() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => toggleActiveMutation.mutate(user.id.toString())}
+                            onClick={() => toggleActiveMutation.mutate(user.id)}
                             disabled={toggleActiveMutation.isPending}
                             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
                               user.isActive

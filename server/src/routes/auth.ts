@@ -72,6 +72,9 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Log successful registration for debugging
+    console.log(`[POST /auth/register] User registered successfully: ${user.email} (ID: ${user.id})`);
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
