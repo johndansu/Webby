@@ -25,7 +25,7 @@ import {
   Star,
   X,
   Bookmark,
-  Filter
+  Menu
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { locationService } from '@/services/locationService'
@@ -193,7 +193,7 @@ export default function JobBoardLanding() {
                 className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative"
                 aria-label="Toggle menu"
               >
-                <Filter className="h-6 w-6" />
+                {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
 
