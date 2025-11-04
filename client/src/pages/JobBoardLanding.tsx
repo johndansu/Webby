@@ -41,6 +41,7 @@ export default function JobBoardLanding() {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([])
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const [savedJobsCount] = useState(() => {
     const saved = localStorage.getItem('savedJobs')
     return saved ? JSON.parse(saved).length : 0
@@ -65,6 +66,33 @@ export default function JobBoardLanding() {
 
     return () => clearTimeout(timer)
   }, [location])
+
+  // Calculate dropdown position when it opens or on scroll/resize
+  useEffect(() => {
+    if (showLocationSuggestions) {
+      const updatePosition = () => {
+        const locationContainer = document.querySelector('.location-input-container')
+        if (locationContainer) {
+          const rect = locationContainer.getBoundingClientRect()
+          setDropdownPosition({
+            top: rect.bottom + 8,
+            left: rect.left,
+            width: rect.width
+          })
+        }
+      }
+      
+      updatePosition()
+      
+      window.addEventListener('scroll', updatePosition, true)
+      window.addEventListener('resize', updatePosition)
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true)
+        window.removeEventListener('resize', updatePosition)
+      }
+    }
+  }, [showLocationSuggestions])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -395,11 +423,14 @@ export default function JobBoardLanding() {
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
                       <div 
-                        className="location-suggestions-dropdown absolute z-[100] w-full mt-2 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
+                        className="location-suggestions-dropdown fixed z-[9999] border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
                         style={{ 
                           backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
                           opacity: 1,
-                          background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff'
+                          background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
+                          top: `${dropdownPosition.top}px`,
+                          left: `${dropdownPosition.left}px`,
+                          width: `${dropdownPosition.width}px`
                         }}
                       >
                         {locationSuggestions.map((suggestion, index) => (
