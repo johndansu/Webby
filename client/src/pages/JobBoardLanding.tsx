@@ -100,6 +100,34 @@ export default function JobBoardLanding() {
       setDropdownPosition(null)
     }
   }, [showLocationSuggestions])
+  useEffect(() => {
+    if (showLocationSuggestions && locationInputRef.current) {
+      const updatePosition = () => {
+        if (locationInputRef.current) {
+          const rect = locationInputRef.current.getBoundingClientRect()
+          setDropdownPosition({
+            top: rect.bottom + 8,
+            left: rect.left,
+            width: rect.width
+          })
+        }
+      }
+      
+      // Small delay to ensure DOM is ready
+      const timeoutId = setTimeout(updatePosition, 0)
+      
+      window.addEventListener('scroll', updatePosition, true)
+      window.addEventListener('resize', updatePosition)
+      
+      return () => {
+        clearTimeout(timeoutId)
+        window.removeEventListener('scroll', updatePosition, true)
+        window.removeEventListener('resize', updatePosition)
+      }
+    } else {
+      setDropdownPosition(null)
+    }
+  }, [showLocationSuggestions])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
