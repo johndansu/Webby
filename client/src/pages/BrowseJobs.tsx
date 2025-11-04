@@ -27,7 +27,8 @@ import {
   Save,
   ChevronLeft,
   ChevronRight,
-  Target
+  Target,
+  Menu
 } from 'lucide-react'
 import { searchService } from '@/services/searchService'
 import { locationService } from '@/services/locationService'
@@ -453,13 +454,13 @@ export default function BrowseJobs() {
                   </button>
                 </>
               )}
-              {/* Hamburger Menu Button */}
+                            {/* Hamburger Menu Button */}
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative"
+                className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative"                               
                 aria-label="Toggle menu"
               >
-                <Filter className="h-6 w-6" />
+                <Menu className="h-6 w-6" />
               </button>
             </div>
 
