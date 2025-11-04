@@ -30,10 +30,12 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { locationService } from '@/services/locationService'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export default function JobBoardLanding() {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
+  const { effectiveTheme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([])
@@ -392,7 +394,14 @@ export default function JobBoardLanding() {
                       className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200"
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
-                      <div className="location-suggestions-dropdown absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown">
+                      <div 
+                        className="location-suggestions-dropdown absolute z-50 w-full mt-2 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
+                        style={{ 
+                          backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
+                          opacity: 1,
+                          background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff'
+                        }}
+                      >
                         {locationSuggestions.map((suggestion, index) => (
                           <button
                             key={index}
@@ -401,7 +410,11 @@ export default function JobBoardLanding() {
                               setLocation(suggestion)
                               setShowLocationSuggestions(false)
                             }}
-                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/30 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-sm text-slate-700 dark:text-slate-200 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                            style={{
+                              backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
+                              background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff'
+                            }}
                           >
                             <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400 dark:text-slate-400" />
                             {suggestion}
