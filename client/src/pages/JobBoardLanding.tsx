@@ -66,8 +66,25 @@ export default function JobBoardLanding() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    setShowLocationSuggestions(false) // Close location dropdown before navigation
     navigate(`/browse?q=${searchQuery}&location=${location}`)
   }
+
+  // Close location suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      // Check if click is outside the location input and dropdown
+      if (!target.closest('.location-input-container')) {
+        setShowLocationSuggestions(false)
+      }
+    }
+
+    if (showLocationSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showLocationSuggestions])
 
   const popularSearches = [
     'Remote Developer',
@@ -354,13 +371,19 @@ export default function JobBoardLanding() {
                     />
                 </div>
 
-                  <div className="flex-1 relative group">
+                  <div className="flex-1 relative group location-input-container">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-600 transition-colors duration-200" />
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
+                      onBlur={() => {
+                        // Delay closing to allow suggestion click to register
+                        setTimeout(() => {
+                          setShowLocationSuggestions(false)
+                        }, 200)
+                      }}
                       placeholder="City or 'Remote'"
                       className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200"
                     />
@@ -370,11 +393,15 @@ export default function JobBoardLanding() {
                           <button
                             key={index}
                             type="button"
+                            onMouseDown={(e) => {
+                              // Prevent input blur from firing before click
+                              e.preventDefault()
+                            }}
                             onClick={() => {
                               setLocation(suggestion)
                               setShowLocationSuggestions(false)
                             }}
-                            className="w-full text-left px-4 py-3 hover:bg-teal-50 text-sm text-slate-700 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl"
+                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-sm text-slate-700 dark:text-slate-300 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl"
                           >
                             <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400" />
                             {suggestion}
@@ -386,7 +413,8 @@ export default function JobBoardLanding() {
 
                   <button
                     type="submit"
-                    className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all duration-200 hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
+                    onClick={() => setShowLocationSuggestions(false)}
+                    className="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all duration-200 hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 relative z-10"
                   >
                     <Search className="h-5 w-5" />
                     Search Jobs
