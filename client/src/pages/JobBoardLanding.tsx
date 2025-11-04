@@ -71,63 +71,14 @@ export default function JobBoardLanding() {
     return () => clearTimeout(timer)
   }, [location])
 
-  // Calculate dropdown position when it opens or on scroll/resize
+  // Update dropdown position state when suggestions are shown (for absolute positioning, we just need a truthy value)
   useEffect(() => {
     if (showLocationSuggestions && locationInputRef.current) {
-      const updatePosition = () => {
-        if (locationInputRef.current) {
-          const rect = locationInputRef.current.getBoundingClientRect()
-          setDropdownPosition({
-            top: rect.bottom + 8,
-            left: rect.left,
-            width: rect.width
-          })
-        }
-      }
-      
-      // Small delay to ensure DOM is ready
-      const timeoutId = setTimeout(updatePosition, 0)
-      
-      window.addEventListener('scroll', updatePosition, true)
-      window.addEventListener('resize', updatePosition)
-      
-      return () => {
-        clearTimeout(timeoutId)
-        window.removeEventListener('scroll', updatePosition, true)
-        window.removeEventListener('resize', updatePosition)
-      }
+      setDropdownPosition({ top: 0, left: 0, width: 0 }) // Dummy value since we use absolute positioning
     } else {
       setDropdownPosition(null)
     }
-  }, [showLocationSuggestions])
-  useEffect(() => {
-    if (showLocationSuggestions && locationInputRef.current) {
-      const updatePosition = () => {
-        if (locationInputRef.current) {
-          const rect = locationInputRef.current.getBoundingClientRect()
-          setDropdownPosition({
-            top: rect.bottom + 8,
-            left: rect.left,
-            width: rect.width
-          })
-        }
-      }
-      
-      // Small delay to ensure DOM is ready
-      const timeoutId = setTimeout(updatePosition, 0)
-      
-      window.addEventListener('scroll', updatePosition, true)
-      window.addEventListener('resize', updatePosition)
-      
-      return () => {
-        clearTimeout(timeoutId)
-        window.removeEventListener('scroll', updatePosition, true)
-        window.removeEventListener('resize', updatePosition)
-      }
-    } else {
-      setDropdownPosition(null)
-    }
-  }, [showLocationSuggestions])
+  }, [showLocationSuggestions, locationSuggestions.length])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -446,29 +397,29 @@ export default function JobBoardLanding() {
                     />
                 </div>
 
-                  <div className="flex-1 relative group location-input-container" ref={locationInputRef}>
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-600 transition-colors duration-200" />
+                                    <div className="flex-1 relative group location-input-container" ref={locationInputRef}>                                                       
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-600 transition-colors duration-200 z-10" />                                                                      
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
-                      onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
+                      onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}                                                        
                       placeholder="City or 'Remote'"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200 relative z-10"                                       
                     />
-                    {showLocationSuggestions && locationSuggestions.length > 0 && dropdownPosition && (
-                      <div 
-                        className="location-suggestions-dropdown fixed z-[9999] border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
-                        style={{ 
-                          backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
+                    {showLocationSuggestions && locationSuggestions.length > 0 && (                                                         
+                      <div
+                        className="location-suggestions-dropdown absolute z-[9999] border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown mt-2"                                               
+                        style={{
+                          backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',                                                                   
                           opacity: 1,
-                          background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
-                          top: `${dropdownPosition.top}px`,
-                          left: `${dropdownPosition.left}px`,
-                          width: `${dropdownPosition.width}px`
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          width: '100%'
                         }}
                       >
-                        {locationSuggestions.map((suggestion, index) => (
+                        {locationSuggestions.map((suggestion, index) => (       
                           <button
                             key={index}
                             type="button"
@@ -476,13 +427,13 @@ export default function JobBoardLanding() {
                               setLocation(suggestion)
                               setShowLocationSuggestions(false)
                             }}
-                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-sm text-slate-700 dark:text-slate-200 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-sm text-slate-700 dark:text-slate-200 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl border-b border-slate-100 dark:border-slate-700 last:border-b-0"                                    
                             style={{
-                              backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
-                              background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff'
+                              backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',                                                               
+                              background: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff'                                                                     
                             }}
                           >
-                            <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400 dark:text-slate-400" />
+                            <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400 dark:text-slate-400" />                                                 
                             {suggestion}
                           </button>
                         ))}
