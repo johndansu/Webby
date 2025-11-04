@@ -395,7 +395,7 @@ export default function JobBoardLanding() {
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
                       <div 
-                        className="location-suggestions-dropdown absolute z-50 w-full mt-2 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
+                        className="location-suggestions-dropdown absolute z-[100] w-full mt-2 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
                         style={{ 
                           backgroundColor: effectiveTheme === 'dark' ? '#1e293b' : '#ffffff',
                           opacity: 1,
