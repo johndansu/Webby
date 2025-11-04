@@ -75,14 +75,24 @@ export default function JobBoardLanding() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       // Check if click is outside the location input and dropdown
-      if (!target.closest('.location-input-container')) {
+      const locationContainer = target.closest('.location-input-container')
+      const suggestionDropdown = target.closest('.location-suggestions-dropdown')
+      
+      if (!locationContainer && !suggestionDropdown) {
         setShowLocationSuggestions(false)
       }
     }
 
     if (showLocationSuggestions) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      // Use a slight delay to allow click events on suggestions to fire first
+      const timer = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside)
+      }, 100)
+      
+      return () => {
+        clearTimeout(timer)
+        document.removeEventListener('click', handleClickOutside)
+      }
     }
   }, [showLocationSuggestions])
 
@@ -378,32 +388,22 @@ export default function JobBoardLanding() {
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       onFocus={() => locationSuggestions.length > 0 && setShowLocationSuggestions(true)}
-                      onBlur={() => {
-                        // Delay closing to allow suggestion click to register
-                        setTimeout(() => {
-                          setShowLocationSuggestions(false)
-                        }, 200)
-                      }}
                       placeholder="City or 'Remote'"
                       className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200"
                     />
                     {showLocationSuggestions && locationSuggestions.length > 0 && (
-                      <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-slideDown">
+                      <div className="location-suggestions-dropdown absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown">
                         {locationSuggestions.map((suggestion, index) => (
                           <button
                             key={index}
                             type="button"
-                            onMouseDown={(e) => {
-                              // Prevent input blur from firing before click
-                              e.preventDefault()
-                            }}
                             onClick={() => {
                               setLocation(suggestion)
                               setShowLocationSuggestions(false)
                             }}
-                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-sm text-slate-700 dark:text-slate-300 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl"
+                            className="w-full text-left px-4 py-3 hover:bg-teal-50 dark:hover:bg-teal-900/30 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                           >
-                            <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400" />
+                            <MapPin className="h-4 w-4 inline-block mr-2 text-slate-400 dark:text-slate-400" />
                             {suggestion}
                           </button>
                         ))}
