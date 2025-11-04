@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { 
   Search, 
@@ -41,7 +41,8 @@ export default function JobBoardLanding() {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([])
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null)
+  const locationInputRef = useRef<HTMLDivElement>(null)
   const [savedJobsCount] = useState(() => {
     const saved = localStorage.getItem('savedJobs')
     return saved ? JSON.parse(saved).length : 0
@@ -69,11 +70,10 @@ export default function JobBoardLanding() {
 
   // Calculate dropdown position when it opens or on scroll/resize
   useEffect(() => {
-    if (showLocationSuggestions) {
+    if (showLocationSuggestions && locationInputRef.current) {
       const updatePosition = () => {
-        const locationContainer = document.querySelector('.location-input-container')
-        if (locationContainer) {
-          const rect = locationContainer.getBoundingClientRect()
+        if (locationInputRef.current) {
+          const rect = locationInputRef.current.getBoundingClientRect()
           setDropdownPosition({
             top: rect.bottom + 8,
             left: rect.left,
@@ -82,15 +82,19 @@ export default function JobBoardLanding() {
         }
       }
       
-      updatePosition()
+      // Small delay to ensure DOM is ready
+      const timeoutId = setTimeout(updatePosition, 0)
       
       window.addEventListener('scroll', updatePosition, true)
       window.addEventListener('resize', updatePosition)
       
       return () => {
+        clearTimeout(timeoutId)
         window.removeEventListener('scroll', updatePosition, true)
         window.removeEventListener('resize', updatePosition)
       }
+    } else {
+      setDropdownPosition(null)
     }
   }, [showLocationSuggestions])
 
@@ -411,7 +415,7 @@ export default function JobBoardLanding() {
                     />
                 </div>
 
-                  <div className="flex-1 relative group location-input-container">
+                  <div className="flex-1 relative group location-input-container" ref={locationInputRef}>
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-600 transition-colors duration-200" />
                     <input
                       type="text"
@@ -421,7 +425,7 @@ export default function JobBoardLanding() {
                       placeholder="City or 'Remote'"
                       className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all duration-200"
                     />
-                    {showLocationSuggestions && locationSuggestions.length > 0 && (
+                    {showLocationSuggestions && locationSuggestions.length > 0 && dropdownPosition && (
                       <div 
                         className="location-suggestions-dropdown fixed z-[9999] border-2 border-slate-300 dark:border-slate-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-slideDown"
                         style={{ 
