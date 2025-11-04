@@ -54,10 +54,13 @@ export default function JobBoardLanding() {
       if (location.length >= 2) {
         try {
           const suggestions = await locationService.searchLocations(location)
-          setLocationSuggestions(suggestions)
+          setLocationSuggestions(suggestions || [])
           setShowLocationSuggestions(true)
-        } catch (error) {
+        } catch (error: any) {
           console.error('Location search error:', error)
+          // Error will be handled by API interceptor, just clear suggestions on error
+          setLocationSuggestions([])
+          setShowLocationSuggestions(false)
         }
       } else {
         setLocationSuggestions([])
