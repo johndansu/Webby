@@ -89,6 +89,14 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  meta?: {
+    total?: number;
+    active?: number;
+    inactive?: number;
+    returned?: number;
+    warning?: string;
+    [key: string]: any;
+  };
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
